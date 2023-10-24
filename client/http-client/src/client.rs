@@ -83,6 +83,7 @@ pub struct HttpClientBuilder<L = Identity> {
 	max_log_length: u32,
 	headers: HeaderMap,
 	service_builder: tower::ServiceBuilder<L>,
+	ignore_resp_id: bool,
 }
 
 impl<L> HttpClientBuilder<L> {
@@ -144,6 +145,11 @@ impl<L> HttpClientBuilder<L> {
 		self
 	}
 
+	pub fn ignore_response_id(mut self, ignore: bool) -> Self {
+		self.ignore_resp_id = ignore;
+		self
+	}
+
 	/// Max length for logging for requests and responses in number characters.
 	///
 	/// Logs bigger than this limit will be truncated.
@@ -172,6 +178,7 @@ impl<L> HttpClientBuilder<L> {
 			max_response_size: self.max_response_size,
 			service_builder,
 			request_timeout: self.request_timeout,
+			ignore_resp_id: self.ignore_resp_id,
 		}
 	}
 }
@@ -196,6 +203,7 @@ where
 			headers,
 			max_log_length,
 			service_builder,
+			ignore_resp_id,
 			..
 		} = self;
 
@@ -213,6 +221,7 @@ where
 			transport,
 			id_manager: Arc::new(RequestIdManager::new(max_concurrent_requests, id_kind)),
 			request_timeout,
+			ignore_resp_id,
 		})
 	}
 }
@@ -229,6 +238,7 @@ impl Default for HttpClientBuilder<Identity> {
 			max_log_length: 4096,
 			headers: HeaderMap::new(),
 			service_builder: tower::ServiceBuilder::new(),
+			ignore_resp_id: false,
 		}
 	}
 }
@@ -249,6 +259,8 @@ pub struct HttpClient<S = HttpBackend> {
 	request_timeout: Duration,
 	/// Request ID manager.
 	id_manager: Arc<RequestIdManager>,
+	/// Ignore id in response.
+	ignore_resp_id: bool,
 }
 
 impl<S> HttpClient<S> {
@@ -316,6 +328,10 @@ where
 		let response = ResponseSuccess::try_from(serde_json::from_slice::<Response<&JsonRawValue>>(&body)?)?;
 
 		let result = serde_json::from_str(response.result.get()).map_err(Error::ParseError)?;
+
+		if self.ignore_resp_id {
+			return Ok(result);
+		}
 
 		if response.id == id {
 			Ok(result)
