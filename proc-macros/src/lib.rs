@@ -24,6 +24,8 @@
 // IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#![allow(clippy::too_many_lines)]
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -389,26 +391,26 @@ pub(crate) mod visitor;
 /// ```
 #[proc_macro_attribute]
 pub fn rpc(attr: TokenStream, item: TokenStream) -> TokenStream {
-	let attr = proc_macro2::TokenStream::from(attr);
+    let attr = proc_macro2::TokenStream::from(attr);
 
-	let rebuilt_rpc_attribute = syn::Attribute {
-		pound_token: syn::token::Pound::default(),
-		style: syn::AttrStyle::Outer,
-		bracket_token: syn::token::Bracket::default(),
-		path: syn::Ident::new("rpc", proc_macro2::Span::call_site()).into(),
-		tokens: quote! { (#attr) },
-	};
+    let rebuilt_rpc_attribute = syn::Attribute {
+        pound_token: syn::token::Pound::default(),
+        style: syn::AttrStyle::Outer,
+        bracket_token: syn::token::Bracket::default(),
+        path: syn::Ident::new("rpc", proc_macro2::Span::call_site()).into(),
+        tokens: quote! { (#attr) },
+    };
 
-	match rpc_impl(rebuilt_rpc_attribute, item) {
-		Ok(tokens) => tokens,
-		Err(err) => err.to_compile_error(),
-	}
-	.into()
+    match rpc_impl(rebuilt_rpc_attribute, item) {
+        Ok(tokens) => tokens,
+        Err(err) => err.to_compile_error(),
+    }
+    .into()
 }
 
 /// Convenience form of `rpc` that may use `?` for error handling to avoid boilerplate.
 fn rpc_impl(attr: syn::Attribute, item: TokenStream) -> Result<proc_macro2::TokenStream, syn::Error> {
-	let trait_data: syn::ItemTrait = syn::parse(item)?;
-	let rpc = RpcDescription::from_item(attr, trait_data)?;
-	rpc.render()
+    let trait_data: syn::ItemTrait = syn::parse(item)?;
+    let rpc = RpcDescription::from_item(attr, trait_data)?;
+    rpc.render()
 }
