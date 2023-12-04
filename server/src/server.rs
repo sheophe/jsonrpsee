@@ -775,8 +775,8 @@ where
 
 			let fut = async move {
 				// Only the `POST` method is allowed.
-				match *request.method() {
-					Method::POST if content_type_is_json(&request) => {
+				match request.method() {
+					&Method::POST if content_type_is_json(&request) => {
 						let (parts, body) = request.into_parts();
 
 						let (body, is_single) = match read_body(&parts.headers, body, max_request_size).await {
@@ -804,8 +804,8 @@ where
 						http::response::ok_response(rp.map_or(String::new(), |r| r.result))
 					}
 					// Error scenarios:
-					Method::POST => http::response::unsupported_content_type(),
-					_ => http::response::method_not_allowed(),
+					&Method::POST => http::response::unsupported_content_type(),
+					method => http::response::method_not_allowed(method),
 				}
 			};
 

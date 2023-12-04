@@ -47,10 +47,10 @@ pub(crate) mod response {
 	}
 
 	/// Create a text/plain response for disallowed method used.
-	pub(crate) fn method_not_allowed() -> hyper::Response<hyper::Body> {
+	pub(crate) fn method_not_allowed(method: &http::Method) -> hyper::Response<hyper::Body> {
 		from_template(
 			hyper::StatusCode::METHOD_NOT_ALLOWED,
-			"Used HTTP Method is not allowed. POST or OPTIONS is required\n".to_owned(),
+			format!("Used HTTP Method {} is not allowed. POST or OPTIONS is required\n", method),
 			TEXT,
 		)
 	}
