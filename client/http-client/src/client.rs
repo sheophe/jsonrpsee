@@ -323,11 +323,10 @@ where
 			}
 		};
 
-		tracing::debug!(?body);
-
 		// NOTE: it's decoded first to `JsonRawValue` and then to `R` below to get
 		// a better error message if `R` couldn't be decoded.
 		let response = ResponseSuccess::try_from(serde_json::from_slice::<Response<&JsonRawValue>>(&body)?)?;
+		tracing::debug!(?response);
 
 		let result = serde_json::from_str(response.result.get()).map_err(Error::ParseError)?;
 
