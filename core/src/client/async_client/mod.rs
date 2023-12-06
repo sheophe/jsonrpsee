@@ -357,7 +357,7 @@ impl ClientT for Client {
 		}
 	}
 
-	#[instrument(name = "method_call", skip(self, params), level = "trace")]
+	#[instrument(name = "method_call", skip(self, params), level = "debug")]
 	async fn request<R, Params>(&self, method: &str, params: Params) -> Result<R, Error>
 	where
 		R: DeserializeOwned,
