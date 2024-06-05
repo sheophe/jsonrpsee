@@ -112,7 +112,7 @@ where
 	) -> Result<Self, Error>
 	where
 		L: Layer<HttpBackend<Body>, Service = S>,
-		L: Layer<FollowRedirect<S>>,
+		L: Layer<FollowRedirect<HttpBackend>>,
 	{
 		let mut url = Url::parse(target.as_ref()).map_err(|e| Error::Url(format!("Invalid URL: {e}")))?;
 		if url.host_str().is_none() {

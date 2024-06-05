@@ -47,6 +47,7 @@ use jsonrpsee_types::{ErrorObject, InvalidRequestId, ResponseSuccess, TwoPointZe
 use serde::de::DeserializeOwned;
 use tower::layer::util::Identity;
 use tower::{Layer, Service};
+use tower_http::follow_redirect::FollowRedirect;
 use tracing::instrument;
 
 /// Http Client Builder.
@@ -186,6 +187,7 @@ impl<L> HttpClientBuilder<L> {
 impl<B, S, L> HttpClientBuilder<L>
 where
 	L: Layer<transport::HttpBackend, Service = S>,
+	L: Layer<FollowRedirect<HttpBackend>>,
 	S: Service<hyper::Request<Body>, Response = hyper::Response<B>, Error = TransportError> + Clone,
 	B: HttpBody + Send + 'static,
 	B::Data: Send,
