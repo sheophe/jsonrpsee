@@ -34,6 +34,7 @@
 
 #![warn(missing_docs, missing_debug_implementations, missing_copy_implementations, unreachable_pub)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![feature(let_chains)]
 
 mod client;
 

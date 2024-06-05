@@ -47,7 +47,6 @@ use jsonrpsee_types::{ErrorObject, InvalidRequestId, ResponseSuccess, TwoPointZe
 use serde::de::DeserializeOwned;
 use tower::layer::util::Identity;
 use tower::{Layer, Service};
-use tower_http::follow_redirect::FollowRedirect;
 use tracing::instrument;
 
 /// Http Client Builder.

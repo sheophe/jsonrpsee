@@ -184,7 +184,7 @@ where
 			if let Some(headers) = req.headers_mut() {
 				*headers = self.headers.clone();
 			}
-			let req = req.body(From::from(body)).expect("URI and request headers are valid; qed");
+			let req = req.body(From::from(body.clone())).expect("URI and request headers are valid; qed");
 			let response = self.client.clone().ready().await?.call(req).await?;
 
 			if response.status().is_redirection()
@@ -207,7 +207,7 @@ where
 			n -= 1;
 		}
 
-		Err(Error::RequestFailure { status_code: hyper::StatusCode::PERMANENT_REDIRECT })
+		Err(Error::RequestFailure { status_code: hyper::StatusCode::PERMANENT_REDIRECT.into() })
 	}
 
 	/// Send serialized message and wait until all bytes from the HTTP message body have been read.
