@@ -19,7 +19,6 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
 use tower::{Layer, Service, ServiceExt};
-use tower_http::follow_redirect::FollowRedirectLayer;
 use url::Url;
 
 const CONTENT_TYPE_JSON: &str = "application/json";
@@ -177,18 +176,38 @@ where
 			return Err(Error::RequestTooLarge);
 		}
 
-		let mut req = hyper::Request::post(&self.target);
-		if let Some(headers) = req.headers_mut() {
-			*headers = self.headers.clone();
-		}
-		let req = req.body(From::from(body)).expect("URI and request headers are valid; qed");
-		let response = self.client.clone().ready().await?.call(req).await?;
+		let mut target = self.target.clone();
+		let mut n = 32; // Maximum redirects
 
-		if response.status().is_success() {
-			Ok(response)
-		} else {
-			Err(Error::RequestFailure { status_code: response.status().into() })
+		while n > 0 {
+			let mut req = hyper::Request::post(target);
+			if let Some(headers) = req.headers_mut() {
+				*headers = self.headers.clone();
+			}
+			let req = req.body(From::from(body)).expect("URI and request headers are valid; qed");
+			let response = self.client.clone().ready().await?.call(req).await?;
+
+			if response.status().is_redirection()
+				&& let Some(location) = response.headers().get(hyper::header::LOCATION)
+			{
+				match location.to_str() {
+					Ok(location) => {
+						target = location.to_owned();
+					}
+					Err(e) => {
+						return Err(Error::Url(format!("Invalid redirect URL: {e}")));
+					}
+				}
+			} else if response.status().is_success() {
+				return Ok(response);
+			} else {
+				return Err(Error::RequestFailure { status_code: response.status().into() });
+			}
+
+			n -= 1;
 		}
+
+		Err(Error::RequestFailure { status_code: hyper::StatusCode::PERMANENT_REDIRECT })
 	}
 
 	/// Send serialized message and wait until all bytes from the HTTP message body have been read.
