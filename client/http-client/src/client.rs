@@ -30,7 +30,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::transport::{self, Error as TransportError, HttpBackend, HttpTransportClient};
+use crate::transport::{Error as TransportError, HttpBackend, HttpTransportClient};
 use crate::types::{NotificationSer, RequestSer, Response};
 use async_trait::async_trait;
 use hyper::body::HttpBody;
@@ -186,7 +186,7 @@ impl<L> HttpClientBuilder<L> {
 
 impl<B, S, L> HttpClientBuilder<L>
 where
-	L: Layer<FollowRedirect<HttpBackend>, Service = S>,
+	L: Layer<HttpBackend, Service = S>,
 	S: Service<hyper::Request<Body>, Response = hyper::Response<B>, Error = TransportError> + Clone,
 	B: HttpBody + Send + 'static,
 	B::Data: Send,
