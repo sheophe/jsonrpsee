@@ -19,6 +19,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
 use tower::{Layer, Service, ServiceExt};
+use tower_http::follow_redirect::FollowRedirectLayer;
 use url::Url;
 
 const CONTENT_TYPE_JSON: &str = "application/json";
@@ -157,9 +158,11 @@ where
 			}
 		}
 
+		let client = service_builder.layer(FollowRedirectLayer::default()).service(client);
+
 		Ok(Self {
 			target: url.as_str().to_owned(),
-			client: service_builder.service(client),
+			client,
 			max_request_size,
 			max_response_size,
 			max_log_length,
