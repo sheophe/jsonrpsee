@@ -19,7 +19,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use thiserror::Error;
 use tower::{Layer, Service, ServiceExt};
-use tower_http::follow_redirect::{FollowRedirect, FollowRedirectLayer};
+use tower_http::follow_redirect::FollowRedirectLayer;
 use url::Url;
 
 const CONTENT_TYPE_JSON: &str = "application/json";
@@ -101,7 +101,7 @@ where
 	B::Error: Into<Box<dyn StdError + Send + Sync>>,
 {
 	/// Initializes a new HTTP client.
-	pub(crate) fn new<L>(
+	pub(crate) fn new<L: Layer<HttpBackend<Body>, Service = S>>(
 		max_request_size: u32,
 		target: impl AsRef<str>,
 		max_response_size: u32,
@@ -109,10 +109,7 @@ where
 		max_log_length: u32,
 		headers: HeaderMap,
 		service_builder: tower::ServiceBuilder<L>,
-	) -> Result<Self, Error>
-	where
-		L: Layer<HttpBackend<Body>, Service = S>,
-	{
+	) -> Result<Self, Error> {
 		let mut url = Url::parse(target.as_ref()).map_err(|e| Error::Url(format!("Invalid URL: {e}")))?;
 		if url.host_str().is_none() {
 			return Err(Error::Url("Invalid host".into()));
@@ -161,7 +158,7 @@ where
 			}
 		}
 
-		let client = service_builder.layer(FollowRedirectLayer::new()).service(client);
+		let client = service_builder.layer(FollowRedirectLayer::default()).service(client);
 
 		Ok(Self {
 			target: url.as_str().to_owned(),
