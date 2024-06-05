@@ -158,7 +158,7 @@ where
 			}
 		}
 
-		let client = service_builder.layer(FollowRedirectLayer::default()).service(client);
+		let client = service_builder.service(client);
 
 		Ok(Self {
 			target: url.as_str().to_owned(),
