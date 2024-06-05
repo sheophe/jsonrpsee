@@ -111,7 +111,8 @@ where
 		service_builder: tower::ServiceBuilder<L>,
 	) -> Result<Self, Error>
 	where
-		L: Layer<HttpBackend<Body>, Service = FollowRedirect<S>>,
+		L: Layer<HttpBackend<Body>, Service = S>,
+		L: Layer<FollowRedirect<S>>,
 	{
 		let mut url = Url::parse(target.as_ref()).map_err(|e| Error::Url(format!("Invalid URL: {e}")))?;
 		if url.host_str().is_none() {
