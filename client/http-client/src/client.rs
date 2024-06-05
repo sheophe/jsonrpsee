@@ -187,7 +187,7 @@ impl<L> HttpClientBuilder<L> {
 impl<B, S, L> HttpClientBuilder<L>
 where
 	L: Layer<transport::HttpBackend, Service = S>,
-	L: Layer<FollowRedirect<S>>,
+	L: Layer<FollowRedirect<HttpBackend>>,
 	S: Service<hyper::Request<Body>, Response = hyper::Response<B>, Error = TransportError> + Clone,
 	B: HttpBody + Send + 'static,
 	B::Data: Send,
