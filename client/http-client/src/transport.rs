@@ -8,6 +8,7 @@
 
 use hyper::body::{Body, HttpBody};
 use hyper::client::{Client, HttpConnector};
+use hyper::http::uri::Scheme;
 use hyper::http::{HeaderMap, HeaderValue};
 use jsonrpsee_core::client::CertificateStore;
 use jsonrpsee_core::error::GenericTransportError;
@@ -90,6 +91,8 @@ pub struct HttpTransportClient<S> {
 	max_log_length: u32,
 	/// Custom headers to pass with every request.
 	headers: HeaderMap,
+	/// Replace 'https' with 'http' in links and redirects.
+	http_only: bool,
 }
 
 impl<B, S> HttpTransportClient<S>
@@ -108,6 +111,7 @@ where
 		max_log_length: u32,
 		headers: HeaderMap,
 		service_builder: tower::ServiceBuilder<L>,
+		http_only: bool,
 	) -> Result<Self, Error> {
 		let mut url = Url::parse(target.as_ref()).map_err(|e| Error::Url(format!("Invalid URL: {e}")))?;
 		if url.host_str().is_none() {
@@ -166,6 +170,7 @@ where
 			max_response_size,
 			max_log_length,
 			headers: cached_headers,
+			http_only,
 		})
 	}
 
@@ -179,7 +184,12 @@ where
 		let mut target = self.target.clone();
 		let mut n = 32; // Maximum redirects
 
-		while n > 0 {
+		for _ in (0..n) {
+			if self.http_only
+				&& let Some(net_target) = target.strip_prefix("https://").map(|s| format!("http://{}", s))
+			{
+				target = new_target;
+			}
 			let mut req = hyper::Request::post(target);
 			if let Some(headers) = req.headers_mut() {
 				*headers = self.headers.clone();
@@ -203,8 +213,6 @@ where
 			} else {
 				return Err(Error::RequestFailure { status_code: response.status().into() });
 			}
-
-			n -= 1;
 		}
 
 		Err(Error::RequestFailure { status_code: hyper::StatusCode::PERMANENT_REDIRECT.into() })
@@ -291,6 +299,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap_err();
 		assert!(matches!(err, Error::Url(_)));
@@ -307,6 +316,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "https://localhost/");
@@ -323,6 +333,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap_err();
 		assert!(matches!(err, Error::Url(_)));
@@ -338,6 +349,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap_err();
 		assert!(matches!(err, Error::Url(_)));
@@ -349,6 +361,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap_err();
 		assert!(matches!(err, Error::Url(_)));
@@ -364,6 +377,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "http://localhost/my-special-path");
@@ -379,6 +393,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "http://127.0.0.1/my?name1=value1&name2=value2");
@@ -394,6 +409,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "http://127.0.0.1/my.htm");
@@ -409,6 +425,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "http://127.0.0.1/");
@@ -425,6 +442,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "https://localhost:9999/");
@@ -440,6 +458,7 @@ mod tests {
 			80,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(&client.target, "http://localhost:9999/");
@@ -458,6 +477,7 @@ mod tests {
 			99,
 			HeaderMap::new(),
 			tower::ServiceBuilder::new(),
+			false,
 		)
 		.unwrap();
 		assert_eq!(client.max_request_size, eighty_bytes_limit);

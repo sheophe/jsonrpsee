@@ -84,6 +84,7 @@ pub struct HttpClientBuilder<L = Identity> {
 	headers: HeaderMap,
 	service_builder: tower::ServiceBuilder<L>,
 	ignore_resp_id: bool,
+	http_only: bool,
 }
 
 impl<L> HttpClientBuilder<L> {
@@ -166,6 +167,11 @@ impl<L> HttpClientBuilder<L> {
 		self
 	}
 
+	pub fn set_http_only(mut self, http_only: bool) -> Self {
+		self.http_only = http_only;
+		self
+	}
+
 	/// Set custom tower middleware.
 	pub fn set_http_middleware<T>(self, service_builder: tower::ServiceBuilder<T>) -> HttpClientBuilder<T> {
 		HttpClientBuilder {
@@ -179,6 +185,7 @@ impl<L> HttpClientBuilder<L> {
 			service_builder,
 			request_timeout: self.request_timeout,
 			ignore_resp_id: self.ignore_resp_id,
+			http_only: self.http_only,
 		}
 	}
 }
@@ -204,6 +211,7 @@ where
 			max_log_length,
 			service_builder,
 			ignore_resp_id,
+			http_only,
 			..
 		} = self;
 
@@ -215,6 +223,7 @@ where
 			max_log_length,
 			headers,
 			service_builder,
+			http_only,
 		)
 		.map_err(|e| Error::Transport(e.into()))?;
 		Ok(HttpClient {
@@ -239,6 +248,7 @@ impl Default for HttpClientBuilder<Identity> {
 			headers: HeaderMap::new(),
 			service_builder: tower::ServiceBuilder::new(),
 			ignore_resp_id: false,
+			http_only: false,
 		}
 	}
 }
