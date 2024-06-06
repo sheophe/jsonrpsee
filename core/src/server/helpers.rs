@@ -290,7 +290,7 @@ impl MethodResponse {
 					Self { result, success_or_error: MethodResponseResult::Failed(err_code), is_subscription: false }
 				} else {
 					let err_code = ErrorCode::InternalError;
-					let result = serde_json::to_string(&Response::new(err_code.into(), id))
+					let result = serde_json::to_string(&Response::new(err_code.clone().into(), id))
 						.expect("JSON serialization infallible; qed");
 					Self {
 						result,

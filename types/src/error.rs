@@ -89,7 +89,7 @@ impl<'a> ErrorObject<'a> {
 	/// Borrow the current [`ErrorObject`].
 	pub fn borrow(&'a self) -> ErrorObject<'a> {
 		ErrorObject {
-			code: self.code,
+			code: self.code.clone(),
 			message: StdCow::Borrowed(self.message.borrow()),
 			data: self.data.as_ref().map(|d| StdCow::Borrowed(d.borrow())),
 		}
@@ -106,7 +106,8 @@ impl<'a> PartialEq for ErrorObject<'a> {
 
 impl<'a> From<ErrorCode> for ErrorObject<'a> {
 	fn from(code: ErrorCode) -> Self {
-		Self { code, message: code.message().into(), data: None }
+		let message = code.message().into();
+		Self { code, message, data: None }
 	}
 }
 
@@ -167,7 +168,7 @@ pub const TOO_BIG_BATCH_REQUEST_MSG: &str = "The batch request was too large";
 pub const TOO_BIG_BATCH_RESPONSE_MSG: &str = "The batch response was too large";
 
 /// JSONRPC error code
-#[derive(Error, Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Error, Debug, PartialEq, Eq, Clone)]
 pub enum ErrorCode {
 	/// Invalid JSON was received by the server.
 	/// An error occurred on the server while parsing the JSON text.
@@ -185,7 +186,7 @@ pub enum ErrorCode {
 	/// Internal JSON-RPC error.
 	InternalError,
 	/// Reserved for implementation-defined server-errors.
-	ServerError(i32),
+	ServerError(i32, String),
 }
 
 impl ErrorCode {
@@ -200,22 +201,22 @@ impl ErrorCode {
 			ServerIsBusy => SERVER_IS_BUSY_CODE,
 			InvalidParams => INVALID_PARAMS_CODE,
 			InternalError => INTERNAL_ERROR_CODE,
-			ServerError(code) => code,
+			ServerError(code, _) => code,
 		}
 	}
 
 	/// Returns the message for the given error code.
-	pub const fn message(&self) -> &'static str {
+	pub fn message(&self) -> String {
 		use ErrorCode::*;
 		match self {
-			ParseError => PARSE_ERROR_MSG,
-			OversizedRequest => OVERSIZED_REQUEST_MSG,
-			InvalidRequest => INVALID_REQUEST_MSG,
-			MethodNotFound => METHOD_NOT_FOUND_MSG,
-			ServerIsBusy => SERVER_IS_BUSY_MSG,
-			InvalidParams => INVALID_PARAMS_MSG,
-			InternalError => INTERNAL_ERROR_MSG,
-			ServerError(_) => SERVER_ERROR_MSG,
+			ParseError => PARSE_ERROR_MSG.to_owned(),
+			OversizedRequest => OVERSIZED_REQUEST_MSG.to_owned(),
+			InvalidRequest => INVALID_REQUEST_MSG.to_owned(),
+			MethodNotFound => METHOD_NOT_FOUND_MSG.to_owned(),
+			ServerIsBusy => SERVER_IS_BUSY_MSG.to_owned(),
+			InvalidParams => INVALID_PARAMS_MSG.to_owned(),
+			InternalError => INTERNAL_ERROR_MSG.to_owned(),
+			ServerError(_, message) => message.clone(),
 		}
 	}
 }
@@ -236,7 +237,7 @@ impl From<i32> for ErrorCode {
 			METHOD_NOT_FOUND_CODE => MethodNotFound,
 			INVALID_PARAMS_CODE => InvalidParams,
 			INTERNAL_ERROR_CODE => InternalError,
-			code => ServerError(code),
+			code => ServerError(code, SERVER_ERROR_MSG.to_owned()),
 		}
 	}
 }
