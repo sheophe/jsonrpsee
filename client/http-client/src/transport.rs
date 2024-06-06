@@ -215,7 +215,7 @@ where
 			}
 		}
 
-		Err(Error::Http(Box::new(anyhow::anyhow!("too many redirects"))))
+		Err(Error::TooManyRedirects)
 	}
 
 	/// Send serialized message and wait until all bytes from the HTTP message body have been read.
@@ -266,6 +266,10 @@ pub enum Error {
 	/// Invalid certificate store.
 	#[error("Invalid certificate store")]
 	InvalidCertficateStore,
+
+	/// Too many redirects.
+	#[error("Too many redirects")]
+	TooManyRedirects,
 }
 
 impl From<GenericTransportError> for Error {
