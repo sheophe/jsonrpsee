@@ -215,7 +215,7 @@ where
 			}
 		}
 
-		Err(Error::RequestFailure { status_code: hyper::StatusCode::PERMANENT_REDIRECT.into() })
+		Err(Error::Http(Box::new(anyhow::anyhow!("too many redirects"))))
 	}
 
 	/// Send serialized message and wait until all bytes from the HTTP message body have been read.
