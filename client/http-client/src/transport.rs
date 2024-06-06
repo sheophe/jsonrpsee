@@ -186,7 +186,7 @@ where
 
 		for _ in (0..n) {
 			if self.http_only
-				&& let Some(net_target) = target.strip_prefix("https://").map(|s| format!("http://{}", s))
+				&& let Some(new_target) = target.strip_prefix("https://").map(|s| format!("http://{}", s))
 			{
 				target = new_target;
 			}
